@@ -7,10 +7,10 @@
   
   tasks:
     - name: copy keystore & trustore to hosts
-      copy: src=/tmp/cp-ansible/cert/{{ item }} dest=/var/ssl/private/
+      copy: src=/usr/src/confluent-kafka/cert/{{ item }} dest=/var/ssl/private/
       with_items:
-        - kafka.server.keystore.jks
-        - kafka.server.truststore.jks
+        - client.keystore.jks
+        - client.truststore.jks
                     
     - name: edit kafka broker ssl endpoint
       lineinfile:
@@ -40,12 +40,12 @@
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
       with_items:
-        - { regexp: '^listener.name.internal.ssl.truststore.location', line: 'listener.name.internal.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
-        - { regexp: '^listener.name.internal.ssl.keystore.location', line: 'listener.name.internal.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
-        - { regexp: '^listener.name.external.ssl.truststore.location', line: 'listener.name.external.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
-        - { regexp: '^listener.name.external.ssl.keystore.location', line: 'listener.name.external.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
-        - { regexp: '^confluent.metrics.reporter.ssl.truststore.location', line: 'confluent.metrics.reporter.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
-        - { regexp: '^confluent.metrics.reporter.ssl.keystore.location', line: 'confluent.metrics.reporter.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^listener.name.internal.ssl.truststore.location', line: 'listener.name.internal.ssl.truststore.location=/var/ssl/private/client.truststore.jks' }
+        - { regexp: '^listener.name.internal.ssl.keystore.location', line: 'listener.name.internal.ssl.keystore.location=/var/ssl/private/client.keystore.jks' }
+        - { regexp: '^listener.name.external.ssl.truststore.location', line: 'listener.name.external.ssl.truststore.location=/var/ssl/private/client.truststore.jks' }
+        - { regexp: '^listener.name.external.ssl.keystore.location', line: 'listener.name.external.ssl.keystore.location=/var/ssl/private/client.keystore.jks' }
+        - { regexp: '^confluent.metrics.reporter.ssl.truststore.location', line: 'confluent.metrics.reporter.ssl.truststore.location=/var/ssl/private/client.truststore.jks' }
+        - { regexp: '^confluent.metrics.reporter.ssl.keystore.location', line: 'confluent.metrics.reporter.ssl.keystore.location=/var/ssl/private/client.keystore.jks' }
       ignore_errors: yes
 
     - name: Creates directory Prometheus
@@ -73,15 +73,15 @@
         dest: "{{ item.dest }}"
         mode: 0755
       with_items:
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/jmx_prometheus_javaagent-0.12.0.jar',dest: '/etc/kafka/prometheus'}
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/kafka-0-8-2.yml',dest: '/etc/kafka/prometheus'}
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/zookeeper.yaml',dest: '/etc/kafka/prometheus'}
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/kafka-run-class',dest: '/usr/bin'}
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/kafka-server-start',dest: '/usr/bin'}
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/zookeeper-run-class',dest: '/usr/bin'}
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/zookeeper-server-start',dest: '/usr/bin'}
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/kafka_server_jaas.conf',dest: '/etc/kafka'}
-        - { src: '/tmp/cp-ansible/src/kafka-jmx-agent/zookeeper_server_jass.conf',dest: '/etc/kafka'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/jmx_prometheus_javaagent-0.12.0.jar',dest: '/etc/kafka/prometheus'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/kafka-0-8-2.yml',dest: '/etc/kafka/prometheus'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/zookeeper.yaml',dest: '/etc/kafka/prometheus'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/kafka-run-class',dest: '/usr/bin'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/kafka-server-start',dest: '/usr/bin'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/zookeeper-run-class',dest: '/usr/bin'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/zookeeper-server-start',dest: '/usr/bin'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/kafka_server_jaas.conf',dest: '/etc/kafka'}
+        - { src: '/usr/src/confluent-kafka/src/kafka-jmx-agent/zookeeper_server_jass.conf',dest: '/etc/kafka'}
       ignore_errors: yes
 
     - name: restart zookeeper
