@@ -1,0 +1,43 @@
+---
+- name: Edit Kafka Control Center
+  hosts: control_center
+  tags: control_center
+  gather_facts: false
+  become: yes
+  
+  tasks:
+    - name: copy keystore & trustore to hosts
+      copy: src=/tmp/cp-ansible/cert/{{ item }} dest=/var/ssl/private/
+      with_items:
+        - kafka.server.keystore.jks
+        - kafka.server.truststore.jks
+                    
+    - name: edit control center ssl endpoint
+      lineinfile:
+        path: /etc/confluent-control-center/control-center-production.properties
+        line: "{{ item.line }}"
+      with_items:
+        - { line: 'confluent.controlcenter.rest.ssl.endpoint.identification.algorithm=' }
+        - { line: 'confluent.controlcenter.streams.ssl.endpoint.identification.algorithm=' }
+        - { line: 'confluent.controlcenter.schema.registry.ssl.endpoint.identification.algorithm=' }
+      ignore_errors: yes
+
+    - name: edit control center trustore&keystore
+      lineinfile:
+        dest: /etc/confluent-control-center/control-center-production.properties
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '^confluent.controlcenter.rest.ssl.truststore.location', line: 'confluent.controlcenter.rest.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^confluent.controlcenter.rest.ssl.keystore.location', line: 'confluent.controlcenter.rest.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^confluent.controlcenter.streams.ssl.truststore.location', line: 'confluent.controlcenter.streams.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^confluent.controlcenter.streams.ssl.keystore.location', line: 'confluent.controlcenter.streams.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^confluent.controlcenter.schema.registry.ssl.truststore.location', line: 'confluent.controlcenter.schema.registry.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^confluent.controlcenter.schema.registry.ssl.keystore.location', line: 'confluent.controlcenter.schema.registry.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^confluent.controlcenter.connect.default.cluster', line: 'confluent.controlcenter.connect.default.cluster=http://10.0.15.57:8083' }      
+        - { regexp: '^confluent.controlcenter.rest.listeners', line: 'confluent.controlcenter.rest.listeners=http://0.0.0.0:9021' } 
+      ignore_errors: yes
+
+    - name: restart control center
+      command: systemctl restart confluent-control-center
+      ignore_errors: yes

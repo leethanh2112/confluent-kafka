@@ -1,0 +1,55 @@
+---
+- name: Edit Kafka Connect
+  hosts: kafka_connect
+  tags: kafka_connect
+  gather_facts: false
+  become: yes
+  
+  tasks:
+    - name: copy keystore & trustore to hosts
+      copy: src=/tmp/cp-ansible/cert/{{ item }} dest=/var/ssl/private/
+      with_items:
+        - kafka.server.keystore.jks
+        - kafka.server.truststore.jks
+                    
+    - name: edit kafka connect ssl endpoint
+      lineinfile:
+        path: /etc/kafka/connect-distributed.properties
+        line: "{{ item.line }}"
+      with_items:
+        - { line: 'listeners.https.ssl.endpoint.identification.algorithm=' }
+        - { line: 'ssl.endpoint.identification.algorithm=' }
+        - { line: 'producer.ssl.endpoint.identification.algorithm=' }
+        - { line: 'consumer.ssl.endpoint.identification.algorithm=' }
+        - { line: 'producer.confluent.monitoring.interceptor.ssl.endpoint.identification.algorithm=' }
+        - { line: 'consumer.confluent.monitoring.interceptor.ssl.endpoint.identification.algorithm=' }
+        - { line: 'consumer.confluent.monitoring.interceptor.ssl.endpoint.identification.algorithm=' }
+        - { line: 'producer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="kafka_connect" password="kafka_connect-secret";' }
+        - { line: 'consumer.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="kafka_connect" password="kafka_connect-secret";' }
+      ignore_errors: yes
+
+    - name: edit kafka connect trustore&keystore
+      lineinfile:
+        dest: /etc/kafka/connect-distributed.properties
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '^listeners.https.ssl.truststore.location', line: 'listeners.https.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^listeners.https.ssl.keystore.location', line: 'listeners.https.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^ssl.truststore.location', line: 'ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^ssl.keystore.location', line: 'ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^producer.ssl.truststore.location', line: 'producer.ssl.truststore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^producer.ssl.keystore.location', line: 'producer.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^consumer.ssl.truststore.location', line: 'consumer.ssl.truststore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^consumer.ssl.keystore.location', line: 'consumer.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^producer.confluent.monitoring.interceptor.ssl.truststore.location', line: 'producer.confluent.monitoring.interceptor.ssl.truststore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^producer.confluent.monitoring.interceptor.ssl.keystore.location', line: 'producer.confluent.monitoring.interceptor.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^consumer.confluent.monitoring.interceptor.ssl.truststore.location', line: 'consumer.confluent.monitoring.interceptor.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^consumer.confluent.monitoring.interceptor.ssl.keystore.location', line: 'consumer.confluent.monitoring.interceptor.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^listeners', line: 'listeners=http://0.0.0.0:8083' }
+        - { regexp: '^rest.advertised.listener', line: 'rest.advertised.listener=http' }
+      ignore_errors: yes
+
+    - name: restart kafka connect
+      command: systemctl restart confluent-kafka-connect
+      ignore_errors: yes

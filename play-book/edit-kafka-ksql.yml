@@ -1,0 +1,42 @@
+---
+- name: Edit Kafka KSQL
+  hosts: ksql
+  tags: ksql
+  gather_facts: false
+  become: yes
+  
+  tasks:
+    - name: copy keystore & trustore to hosts
+      copy: src=/tmp/cp-ansible/cert/{{ item }} dest=/var/ssl/private/
+      with_items:
+        - kafka.server.keystore.jks
+        - kafka.server.truststore.jks
+                    
+    - name: edit ksql ssl endpoint
+      lineinfile:
+        path: /etc/ksql/ksql-server.properties
+        line: "{{ item.line }}"
+      with_items:
+        - { line: 'ssl.endpoint.identification.algorithm=' }
+        - { line: 'ksql.schema.registry.ssl.endpoint.identification.algorithm=' }
+        - { line: 'confluent.monitoring.interceptor.ssl.endpoint.identification.algorithm=' }
+      ignore_errors: yes
+
+    - name: edit ksql trustore&keystore
+      lineinfile:
+        dest: /etc/kafka/server.properties
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '^ssl.truststore.location', line: 'ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^ssl.keystore.location', line: 'ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^ksql.schema.registry.ssl.truststore.location', line: 'ksql.schema.registry.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^ksql.schema.registry.ssl.keystore.location', line: 'ksql.schema.registry.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^confluent.monitoring.interceptor.ssl.truststore.location', line: 'confluent.monitoring.interceptor.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^confluent.monitoring.interceptor.ssl.keystore.location', line: 'confluent.monitoring.interceptor.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+      ignore_errors: yes
+
+    - name: restart ksql broker
+      command: systemctl restart confluent-ksql
+      ignore_errors: yes
+

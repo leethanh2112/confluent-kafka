@@ -1,0 +1,89 @@
+---
+- name: Run Install Kafka Tools
+  hosts: localhost
+  gather_facts: false
+  become: yes
+  
+  tasks:                    
+    - name: disable selinux
+      selinux:
+        state: disabled
+
+
+    - name: Stop service firewalld, if started
+      service:
+        name: firewalld
+        state: stopped
+
+
+    - name: Install the required tools
+      yum: name={{ item }} state=present
+      with_items:
+        - wget
+        - git
+        - ntp
+        - bind-utils
+        - tcpdump
+        - tcptraceroute
+        - net-tools
+        - docker
+
+
+    - name: Set timezone to Asia/Ho_Chi_Minh
+      timezone:
+        name: Asia/Ho_Chi_Minh
+
+
+    - copy:
+        src: cron.ntpdate
+        dest: /etc/cron.d/cron.ntpdate
+        mode: 0644
+
+
+    - name: Set timezone to Asia/Ho_Chi_Minh
+      timezone:
+        name: Asia/Ho_Chi_Minh
+
+
+    - name: run kafka-topics-ui
+      docker_container:
+        name: kafka-topics-ui
+        image: landoop/kafka-topics-ui
+        state: started
+        ports:
+        - "8002:8000"
+        env:
+            KAFKA_REST_PROXY_URL: "http://10.0.15.54:8082"
+            PROXY: "true"
+            CADDY_OPTIONS: "basicauth / admin Password1"
+
+
+    - name: run kafka-connect-ui
+      docker_container:
+        name: kafka-connect-ui
+        image: landoop/kafka-connect-ui
+        state: started
+        ports:
+        - "8001:8000"
+        env:
+            CONNECT_URL: "http://10.0.15.57:8083;non-prod"
+            CADDY_OPTIONS: "basicauth / admin Password1"
+            KAFKA_TOPICS_UI: "http://10.0.15.50:8002"
+            KAFKA_TOPICS_UI_ENABLED: "true"
+
+    - name: run kafdrop
+      docker_container:
+        name: kafdrop-ui
+        image: obsidiandynamics/kafdrop
+        state: started
+        ports:
+        - "8003:9000"
+        env:
+            KAFKA_BROKERCONNECT: "10.0.15.51:9092,10.0.15.52:9092,10.0.15.53:9092"
+            KAFKA_PROPERTIES: "$(cat kafka.properties | base64)"
+            KAFKA_TRUSTSTORE: "$(cat kafka.server.truststore.jks | base64)"
+            KAFKA_KEYSTORE: "$(cat kafka.server.keystore.jks | base64)"
+
+
+
+

@@ -1,0 +1,35 @@
+---
+- name: Run Install Basic Tools
+  hosts: all
+  gather_facts: false
+  become: yes
+  
+  tasks:                    
+    - name: disable selinux
+      selinux:
+        state: disabled
+
+    - name: Stop service firewalld, if started
+      service:
+        name: firewalld
+        state: stopped
+
+    - name: Install the required tools
+      yum: name={{ item }} state=present
+      with_items:
+        - wget
+        - git
+        - ntp
+        - bind-utils
+        - tcpdump
+        - tcptraceroute
+        - net-tools
+
+    - name: Set timezone to Asia/Ho_Chi_Minh
+      timezone:
+        name: Asia/Ho_Chi_Minh
+
+    - copy:
+        src: cron.ntpdate
+        dest: /etc/cron.d/cron.ntpdate
+        mode: 0644

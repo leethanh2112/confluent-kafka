@@ -1,0 +1,23 @@
+---
+- name: Add Name Server into Hosts File
+  hosts: all
+  gather_facts: false
+  become: yes
+  
+  tasks:                    
+    - name: Add yum proxy
+      lineinfile:
+        path: /etc/yum.conf
+        line: "{{ item.line }}"
+      with_items:
+        - { line: 'proxy=http://confluent-kafka-admin:8080' }
+
+    - name: Add wget proxy
+      lineinfile:
+        path: /etc/wgetrc
+        line: "{{ item.line }}"
+      with_items:
+        - { line: 'use_proxy=yes' }
+        - { line: 'https_proxy=http://confluent-kafka-admin:8080' }
+        - { line: 'http_proxy=http://confluent-kafka-admin:8080' }
+        - { line: 'ftp_proxy=http://confluent-kafka-admin:8080' }

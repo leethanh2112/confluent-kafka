@@ -1,0 +1,22 @@
+---
+- name: Add Name Server into Hosts File
+  hosts: all
+  gather_facts: false
+  become: yes
+  
+  tasks:                    
+    - name: Add nameserver
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item.line }}"
+      with_items:
+        - { line: '172.31.30.18    confluent-kafka-node03' }
+        - { line: '172.31.18.235   confluent-kafka-node02' }
+        - { line: '172.31.29.69    confluent-kafka-node01' }
+        - { line: '172.31.16.147   confluent-kafka-admin' }		
+        - { line: '172.31.18.195   confluent-kafka-rest' }
+        - { line: '172.31.28.59    confluent-kafka-schema' }
+        - { line: '172.31.24.255   confluent-kafka-ksql' }
+        - { line: '172.31.30.239   confluent-kafka-connect' }	
+        - { line: '172.31.27.240   confluent-kafka-connect-ui' }
+        - { line: '172.31.28.173   confluent-kafka-connect-controller' }

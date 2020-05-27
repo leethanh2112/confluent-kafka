@@ -1,0 +1,38 @@
+---
+- name: Edit Kafka Schema
+  hosts: schema_registry
+  tags: schema_registry
+  gather_facts: false
+  become: yes
+  
+  tasks:
+    - name: copy keystore & trustore to hosts
+      copy: src=/tmp/cp-ansible/cert/{{ item }} dest=/var/ssl/private/
+      with_items:
+        - kafka.server.keystore.jks
+        - kafka.server.truststore.jks
+                    
+    - name: edit schema registry ssl endpoint
+      lineinfile:
+        path: /etc/schema-registry/schema-registry.properties
+        line: "{{ item.line }}"
+      with_items:
+        - { line: 'ssl.endpoint.identification.algorithm=' }
+        - { line: 'kafkastore.ssl.endpoint.identification.algorithm=' }
+      ignore_errors: yes
+
+    - name: edit schema registry trustore&keystore
+      lineinfile:
+        dest: /etc/schema-registry/schema-registry.properties
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '^kafkastore.ssl.truststore.location', line: 'kafkastore.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
+        - { regexp: '^kafkastore.ssl.keystore.location', line: 'kafkastore.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^ssl.truststore.location', line: 'ssl.truststore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^ssl.keystore.location', line: 'ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+      ignore_errors: yes
+
+    - name: restart schema registry
+      command: systemctl restart confluent-schema-registry
+      ignore_errors: yes
