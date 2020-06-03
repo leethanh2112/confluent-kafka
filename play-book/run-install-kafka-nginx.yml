@@ -1,0 +1,154 @@
+---
+- name: Run Install Kafka Tools
+  hosts: kafka_nginx
+  tags: kafka_nginx
+  gather_facts: true
+  become: yes
+  roles:
+    - role: nginxinc.nginx
+  vars:
+    nginx_http_template_enable: true
+    nginx_http_template:
+      default:
+        template_file: http/default.conf.j2
+        conf_file_name: default.conf
+        conf_file_location: /etc/nginx/conf.d/
+        servers:
+          server1:
+            listen:
+              listen_localhost:
+                # ip: 0.0.0.0
+                port: 80
+                opts:
+                  - default_server
+            server_name: localhost
+            error_page: /usr/share/nginx/html
+            autoindex: false
+            reverse_proxy:
+              locations:
+                kafka_admin:
+                  location: /
+                  proxy_pass: http://kafka_admin
+                connect_ui:
+                  location: /connect_ui
+                  proxy_pass: http://connect_ui
+                topic_ui:
+                  location: /topic_ui
+                  proxy_pass: http://topic_ui
+                kafka_connect:
+                  location: /kafka_connect
+                  proxy_pass: http://kafka_connect
+                kafka_rest:
+                  location: /kafka_rest
+                  proxy_pass: http://kafka_rest
+
+        upstreams:
+          upstream_1:
+            name: kafka_admin
+            lb_method: least_conn
+            zone_name: kafka_admin
+            zone_size: 64k
+            sticky_cookie: false
+            servers:
+              frontend_server_1:
+                address: 10.0.15.50
+                port: 9099
+                weight: 1
+                health_check: max_fails=3 fail_timeout=5s
+          upstream_2:
+            name: connect_ui
+            lb_method: least_conn
+            zone_name: connect_ui
+            zone_size: 64k
+            sticky_cookie: false
+            servers:
+              backend_server_1:
+                address: 10.0.15.50
+                port: 8001
+                weight: 1
+                health_check: max_fails=3 fail_timeout=5s
+          upstream_3:
+            name: topic_ui
+            lb_method: least_conn
+            zone_name: topic_ui
+            zone_size: 64k
+            sticky_cookie: false
+            servers:
+              backend_server_1:
+                address: 10.0.15.50
+                port: 8002
+                weight: 1
+                health_check: max_fails=3 fail_timeout=5s
+          upstream_4:
+            name: kafka_connect
+            lb_method: least_conn
+            zone_name: kafka_connect
+            zone_size: 64k
+            sticky_cookie: false
+            servers:
+              backend_server_1:
+                address: 10.0.15.57
+                port: 8083
+                weight: 1
+                health_check: max_fails=3 fail_timeout=5s
+          upstream_5:
+            name: kafka_rest
+            lb_method: least_conn
+            zone_name: kafka_rest
+            zone_size: 64k
+            sticky_cookie: false
+            servers:
+              backend_server_1:
+                address: 10.0.15.54
+                port: 8082
+                weight: 1
+                health_check: max_fails=3 fail_timeout=5s
+
+      kafka_admin:
+        template_file: http/default.conf.j2
+        conf_file_name: kafka_admin.conf
+        conf_file_location: /etc/nginx/conf.d/
+        servers:
+          server1:
+            listen:
+              listen_localhost:
+                ip: 0.0.0.0
+                port: 8081
+                ssl: false
+                opts: []
+            server_name: localhost
+            error_page: /usr/share/nginx/html
+            autoindex: false
+            web_server:
+              locations:
+                frontend_site:
+                  location: /
+                  proxy_hide_headers:
+                    - X-Powered-By
+                  html_file_location: /usr/share/nginx/html
+                  html_file_name: index.html
+                  autoindex: false
+              http_demo_conf: false
+      backend:
+        template_file: http/default.conf.j2
+        conf_file_name: backend_default.conf
+        conf_file_location: /etc/nginx/conf.d/
+        servers:
+          server1:
+            listen:
+              listen_localhost:
+                ip: 0.0.0.0
+                port: 8082
+                ssl: false
+                opts: []
+            server_name: localhost
+            error_page: /usr/share/nginx/html
+            autoindex: false
+            web_server:
+              locations:
+                backend_site:
+                  location: /
+                  html_file_location: /usr/share/nginx/html
+                  html_file_name: index.html
+                  autoindex: false
+              http_demo_conf: false

@@ -7,10 +7,10 @@
   
   tasks:
     - name: copy keystore & trustore to hosts
-      copy: src=/tmp/cp-ansible/cert/{{ item }} dest=/var/ssl/private/
+      copy: src=/usr/src/confluent-kafka/cert/{{ item }} dest=/var/ssl/private/
       with_items:
-        - kafka.server.keystore.jks
-        - kafka.server.truststore.jks
+        - client.keystore.jks
+        - client.truststore.jks
 
     - name: edit kafka rest ssl endpoint
       lineinfile:
@@ -31,13 +31,14 @@
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
       with_items:
-        - { regexp: '^client.ssl.truststore.location', line: 'client.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
-        - { regexp: '^client.ssl.keystore.location', line: 'client.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
-        - { regexp: '^schema.registry.ssl.truststore.location', line: 'schema.registry.ssl.truststore.location=/var/ssl/private/kafka.server.truststore.jks' }
-        - { regexp: '^schema.registry.ssl.keystore.location', line: 'schema.registry.ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
-        - { regexp: '^ssl.truststore.location', line: 'ssl.truststore.location=/var/ssl/private/kafka.server.keystore.jks' }
-        - { regexp: '^ssl.keystore.location', line: 'ssl.keystore.location=/var/ssl/private/kafka.server.keystore.jks' }
+        - { regexp: '^client.ssl.truststore.location', line: 'client.ssl.truststore.location=/var/ssl/private/client.truststore.jks' }
+        - { regexp: '^client.ssl.keystore.location', line: 'client.ssl.keystore.location=/var/ssl/private/client.keystore.jks' }
+        - { regexp: '^schema.registry.ssl.truststore.location', line: 'schema.registry.ssl.truststore.location=/var/ssl/private/client.truststore.jks' }
+        - { regexp: '^schema.registry.ssl.keystore.location', line: 'schema.registry.ssl.keystore.location=/var/ssl/private/client.keystore.jks' }
+        - { regexp: '^ssl.truststore.location', line: 'ssl.truststore.location=/var/ssl/private/client.truststore.jks' }
+        - { regexp: '^ssl.keystore.location', line: 'ssl.keystore.location=/var/ssl/private/client.keystore.jks' }
         - { regexp: '^listeners', line: 'listeners=http://0.0.0.0:8082' }
+        - { regexp: '^schema.registry.url', line: 'schema.registry.url=http://10.0.15.55:8081' }
       ignore_errors: yes
 
     - name: restart kafka rest 
